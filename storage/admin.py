@@ -1,15 +1,13 @@
 from django.contrib import admin
 from .models import (
-    UserProfile,
+    User,
     Warehouse,
     StorageRule,
     BoxOrder,
-    AdCampaign,
 )
 
 
 admin.site.register(Warehouse)
 admin.site.register(StorageRule)
 admin.site.register(BoxOrder)
-admin.site.register(AdCampaign)
-admin.site.register(UserProfile)
+admin.site.register(User)

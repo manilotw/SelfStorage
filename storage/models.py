@@ -1,25 +1,16 @@
 from django.db import models
-from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+from datetime import date
+from django.conf import settings
 
 
 # Пользователь
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=20)
-    address = models.TextField(blank=True, null=True)
+class User(AbstractUser):
+    phone = models.CharField(max_length=20)
+    address = models.TextField(blank=True)
 
     def __str__(self):
-        return self.user.username
-
-
-# Рекламная кампания
-class AdCampaign(models.Model):
-    name = models.CharField(max_length=200)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    clicks = models.PositiveIntegerField(default=0)
-    orders = models.PositiveIntegerField(default=0)
+        return self.username
 
 
 # Склады
@@ -30,7 +21,7 @@ class Warehouse(models.Model):
     price_per_cubic_meter = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        help_text="Цена за 0.5 м³ хранения"
+        help_text="Цена за 1 м³ хранения"
     )
 
     def __str__(self):
@@ -46,7 +37,7 @@ class StorageRule(models.Model):
 
 # Заказ бокса
 class BoxOrder(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
     pickup_address = models.TextField()  # адрес, откуда заберут вещи
     volume = models.FloatField(help_text="Объём вещей в м³")
@@ -65,6 +56,20 @@ class BoxOrder(models.Model):
         ],
         default="pending"
     )
+
+    # Сколько месяцев хранения
+    def storage_months(self):
+        days = (self.due_date - self.created_at.date()).days
+        months = max(days // 30, 1)
+        return months
+
+    # Расчёт полной стоимости
+    def total_price(self):
+        return self.volume * self.warehouse.price_per_cubic_meter * self.storage_months()
+
+    # Просрочен ли заказ
+    def is_overdue(self):
+        return self.due_date < date.today()
 
     # Проверка занят бокс или нет
     def is_occupied(self):
