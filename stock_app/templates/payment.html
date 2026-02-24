@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<main class="container mt-header">
+
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="fw-bold SelfStorage_green">Оформление аренды</h1>
+            <h6 class="SelfStorage_grey">Проверьте параметры бокса и выберите срок аренды</h6>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="row text-decoration-none py-4 px-4 SelfStorage__boxlink">
+
+                <div class="col-12 col-md-4 d-flex justify-content-center align-items-center">
+                    <span class="SelfStorage_green fs_24 me-2">№</span>
+                    <span class="fs_24 fw-bold">{{ box.title }}</span>
+                </div>
+
+                <div class="col-6 col-md-4 d-flex justify-content-center align-items-center">
+                    <span class="fs_24">
+                        {{ box.length }} x {{ box.width }} x {{ box.height }} м
+                    </span>
+                </div>
+
+                <div class="col-6 col-md-4 d-flex justify-content-center align-items-center">
+                    <span class="fs_24">
+                        Высота {{ box.height|floatformat:1 }} м
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5 justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <form method="post">
+                {% csrf_token %}
+
+                <h4 class="text-center mb-4 SelfStorage_green">Выберите срок аренды</h4>
+
+                {% for tariff in tariffs %}
+                <div class="row py-3 px-4 mt-3 SelfStorage__boxlink align-items-center">
+
+                    <div class="col-12 col-md-4 text-center text-md-start">
+                        <span class="fs_24 fw-bold SelfStorage_green">
+                            {{ tariff.title }}
+                        </span>
+                    </div>
+
+                    <div class="col-6 col-md-4 text-center">
+                        <span class="fs_24">
+                            {{ tariff.days }} дней
+                        </span>
+                    </div>
+
+                    <div class="col-6 col-md-4 text-center text-md-end">
+                        <button type="submit"
+                                name="tariff_id"
+                                value="{{ tariff.id }}"
+                                class="btn w-100 fs_24 py-2 text-white border-8 SelfStorage__bg_orange SelfStorage__btn2_orange">
+                            {{ tariff.price }} ₽
+                        </button>
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Назад -->
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <a href="{% url 'storage' box.storage.id %}"
+               class="SelfStorage_orange text-decoration-none">
+                ← Вернуться к выбору боксов
+            </a>
+        </div>
+    </div>
+
+</main>
+
+{% endblock %}

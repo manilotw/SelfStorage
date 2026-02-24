@@ -78,7 +78,7 @@ def storage_view(request, storage):
     }
     return render(request, 'boxes.html', context=context)
 
-
+'''
 @login_required(login_url='login')
 def payment_view(request, boxnumber):
     box = Box.objects.calculate_price_per_month().get(id=boxnumber)
@@ -120,8 +120,63 @@ def payment_view(request, boxnumber):
         order.paid_till = datetime.datetime.today() + datetime.timedelta(days=30)
     order.save()
     return redirect(redirect_url)
+'''
 
+@login_required(login_url='login')
+def payment_view(request, boxnumber):
+    box = Box.objects.get(id=boxnumber)
 
+    if request.method == "POST":
+        tariff_id = request.POST.get("tariff_id")
+        tariff = Tariff.objects.get(id=tariff_id)
+
+        order = Order.objects.filter(
+            client=request.user,
+            box=box
+        ).order_by('-paid_till').first()
+
+        if not order:
+            order = Order.objects.create(
+                client=request.user,
+                box=box,
+                tariff=tariff,
+                is_paid=False
+            )
+        else:
+            order.tariff = tariff
+            order.is_paid = False
+
+        Configuration.account_id = settings.YOOKASSA_SHOP_ID
+        Configuration.secret_key = settings.YOOKASSA_API_KEY
+
+        payment = Payment.create({
+            "amount": {
+                "value": tariff.price,
+                "currency": "RUB"
+            },
+            "confirmation": {
+                "type": "redirect",
+                "return_url": request.build_absolute_uri(
+                    reverse("order_status", args=[order.id])
+                )
+            },
+            "capture": True,
+            "description": f"Продление бокса {box.title} на {tariff.days} дней"
+        }, uuid.uuid4())
+
+        order.payment_id = payment.id
+        order.save()
+
+        return redirect(payment.confirmation.confirmation_url)
+
+    tariffs = Tariff.objects.all()
+
+    return render(request, "payment.html", {
+        "box": box,
+        "tariffs": tariffs
+    })
+
+'''
 def order_status_view(request, order_id: int):
     order = Order.objects.get(id=order_id)
     Configuration.account_id = settings.YOOKASSA_SHOP_ID
@@ -133,6 +188,30 @@ def order_status_view(request, order_id: int):
         order.save()
         return redirect(f"http://{allowed_host[0]}:8000/my-rent/")
     return render(request, 'paid-not-success.html')
+'''
+
+def order_status_view(request, order_id):
+    order = Order.objects.get(id=order_id)
+
+    Configuration.account_id = settings.YOOKASSA_SHOP_ID
+    Configuration.secret_key = settings.YOOKASSA_API_KEY
+
+    payment = Payment.find_one(order.payment_id)
+
+    if payment.paid:
+        order.is_paid = True
+        order.paid_date = timezone.now()
+
+        if order.paid_till and order.paid_till > timezone.now():
+            order.paid_till += datetime.timedelta(days=order.tariff.days)
+        else:
+            order.paid_till = timezone.now() + datetime.timedelta(days=order.tariff.days)
+
+        order.save()
+
+        return redirect("my-rent")
+
+    return render(request, "paid-not-success.html")
 
 
 def show_faq(request):
