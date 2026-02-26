@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}История аренды{% endblock %}
+{% block content %}
+{% include 'include/navbarbox.html' %}
+
+<main class="container mt-header">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="fw-bold SelfStorage_green mb-5">История аренды</h1>
+        </div>
+    </div>
+
+    {% if orders %}
+        <div class="row">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="SelfStorage__bg_lightgrey">
+                            <tr>
+                                <th>Дата заказа</th>
+                                <th>Бокс</th>
+                                <th>Склад</th>
+                                <th>Тариф</th>
+                                <th>Сумма</th>
+                                <th>Период аренды</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.time|date:"d.m.Y H:i" }}</td>
+                                    <td>{{ order.box.title }}</td>
+                                    <td>{{ order.box.storage.title }}</td>
+                                    <td>
+                                        {% if order.tariff %}
+                                            {{ order.tariff.title }} ({{ order.tariff.days }} дн.)
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.tariff %}
+                                            {{ order.tariff.price }} ₽
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.paid_date and order.paid_till %}
+                                            {{ order.paid_date|date:"d.m.Y" }} - {{ order.paid_till|date:"d.m.Y" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.status == 'active' %}
+                                            <span class="badge bg-success">Активная</span>
+                                        {% elif order.status == 'pending' %}
+                                            <span class="badge bg-warning">Ожидание</span>
+                                        {% elif order.status == 'expired' %}
+                                            <span class="badge bg-secondary">Истекла</span>
+                                        {% elif order.status == 'cancelled' %}
+                                            <span class="badge bg-danger">Отменена</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-12 text-center">
+                <h4 class="SelfStorage_grey my-5">У вас еще нет истории аренды</h4>
+                <a href="{% url 'index' %}" class="btn btn-lg SelfStorage__bg_orange text-white">
+                    Арендовать бокс
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <a href="{% url 'my-rent' %}" class="btn SelfStorage__bg_green text-white">
+                ← Вернуться к аренде
+            </a>
+        </div>
+    </div>
+</main>
+
+{% endblock %}
